@@ -9,6 +9,7 @@ const app = express();
 app.use(json());
 
 app.use('/import', express.static('public'));
+
 app.use('/api/users', usersRouter);
 
 const PORT = process.env.PORT || 3100;
