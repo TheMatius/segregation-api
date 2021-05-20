@@ -1,3 +1,6 @@
+require('dotenv').config();
+require('./mongo');
+
 const express = require('express');
 // Routes
 const usersRouter = require('./routes/users');

@@ -11,8 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^9.0.2",
     "express": "^4.17.1",
     "formidable": "^1.2.2",
+    "mongoose": "^5.12.9",
     "xlsx": "^0.17.0"
   },
   "devDependencies": {
