@@ -4,6 +4,7 @@ require('./mongo');
 const express = require('express');
 // Routes
 const usersRouter = require('./routes/users');
+const transactionsRouter = require('./routes/transactions');
 
 const { json } = express;
 const app = express();
@@ -14,6 +15,7 @@ app.use(json());
 app.use('/import', express.static('public'));
 
 app.use('/api/users', usersRouter);
+app.use('/api/transactions', transactionsRouter);
 
 const PORT = process.env.PORT || 3100;
 const server = app.listen(PORT, () => {
