@@ -2,7 +2,7 @@ const formidable = require('formidable');
 const XLSX = require('xlsx');
 
 const formatUsers = (req, res, next) => {
-  const form = formidable({ multiples: true });
+  const form = formidable();
   form.parse(req, (err, fields, files) => {
     if (err) {
       console.log(err);
