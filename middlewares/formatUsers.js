@@ -1,6 +1,11 @@
 const formidable = require('formidable');
 const XLSX = require('xlsx');
 
+/* TASKS
+  - Convertir DNI en String
+
+*/
+
 const formatUsers = (req, res, next) => {
   const form = formidable({ multiples: true });
   form.parse(req, (err, fields, files) => {
@@ -15,8 +20,13 @@ const formatUsers = (req, res, next) => {
     const sheet = wb.Sheets[sheetName];
     const unorderedUsers = XLSX.utils.sheet_to_json(sheet);
     const users = [];
+    const transactions = [];
     unorderedUsers.forEach(unorderUser => {
-      const userIdx = users.findIndex(user => user.id === unorderUser.id);
+      const userIdx = users.findIndex(user => user.dni === unorderUser.dni);
+      if (transactions.findIndex(transaction => transaction === unorderUser.transaction) === -1) {
+        transactions.push(unorderUser.transaction);
+      }
+      
       if (userIdx === -1) {
         // Add new user
         const { transaction, ...user } = unorderUser;
@@ -26,14 +36,14 @@ const formatUsers = (req, res, next) => {
         });
       } else {
         // Update existing users
-        const { transactions } = users[userIdx];
-        const idx = transactions.findIndex(transaction => transaction === unorderUser.transaction);
+        const { transactions: userTransactions } = users[userIdx];
+        const idx = userTransactions.findIndex(transaction => transaction === unorderUser.transaction);
         if (idx === -1) {
-          transactions.push(unorderUser.transaction);
+          userTransactions.push(unorderUser.transaction);
         }
       }
     });
-    req.body = users;
+    req.body = { users, transactions };
     next();
   });
 };
