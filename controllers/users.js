@@ -12,6 +12,47 @@ const getAll = async (req, res, next) => {
   }
 };
 
+const getById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    res.json({
+      ok: true,
+      user
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const create = async (req, res, next) => {
+  try {
+    const user = req.body;
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        error: 'No se ha recibido el usuario.'
+      });
+    }
+    const { dni, username, name, lastname, transactions } = user;
+    const userDB = new User({
+      dni,
+      username,
+      name,
+      lastname,
+      transactions
+    });
+    const createdUser = await userDB.save();
+    res.status(201).json({
+      ok: true,
+      user: createdUser
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const importUsers = async (req, res, next) => {
   try {
     const { users } = req.body;
@@ -84,7 +125,44 @@ const importUsers = async (req, res, next) => {
   }
 };
 
+const update = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = req.body;
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        error: 'No se ha recibido el usuario.'
+      });
+    }
+    const { name, lastname, transactions } = user;
+
+    const userDB = await User.findOneAndUpdate(id, { name, lastname, transactions }, { new: true });
+    res.json({
+      ok: true,
+      user: userDB
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const remove = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await User.findOneAndRemove(id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getAll,
-  importUsers
+  getById,
+  create,
+  importUsers,
+  update,
+  remove
 };
