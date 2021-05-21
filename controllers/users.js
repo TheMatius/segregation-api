@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Risk = require('../models/Risk');
 
 const getAll = async (req, res, next) => {
   try {
@@ -19,6 +20,53 @@ const getById = async (req, res, next) => {
     res.json({
       ok: true,
       user
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getRisksByUserId = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    const { transactions } = user;
+
+    //Populate multiple fields
+    const populateQuery = [
+      { path: 'transactionOnePopulated', select:'-_id' },
+      { path: 'transactionTwoPopulated', select:'-_id' }
+    ];
+    const allRisks = await Risk.find({}).populate(populateQuery);
+
+    // El diccionario risksEnum funciona ingresando el par de transacciones que referencia el idx en el array de riesgos
+    // T1-T2: 0 , T3-T4: 1 -> devuelve el idx donde se encuentra el riesgo
+    const risksEnum = {};
+    // Este arreglo permite convertir los riesgos al JSON de modelo y crear un diccionario en risksEnum
+    const risksDB = allRisks.map((riskDB, idx) => {
+      const risk = riskDB.toJSON();
+      const { transactionOne, transactionTwo } = risk;
+      const riskDuple = `${transactionOne.code}-${transactionTwo.code}`;
+      risksEnum[riskDuple] = idx;
+      return risk;
+    });
+
+    const risks = [];
+    for (let i = 0; i < transactions.length-1; i++) {
+      for (let j = 1+i; j <= transactions.length-1; j++) {
+        const tuple = `${transactions[i]}-${transactions[j]}`;
+        const reversedTuple = `${transactions[j]}-${transactions[i]}`;
+        //Nullish coalescing operator -> Si alguno de los valores es undefined o null
+        const riskIdx = risksEnum[`${tuple}`] ?? risksEnum[`${reversedTuple}`] ?? -1;
+        if (riskIdx !== -1) {
+          const risk = risksDB[riskIdx];
+          risks.push(risk);
+        }
+      }
+    }
+    res.json({
+      ok: true,
+      risks
     });
   } catch (err) {
     next(err);
@@ -161,6 +209,7 @@ const remove = async (req, res, next) => {
 module.exports = {
   getAll,
   getById,
+  getRisksByUserId,
   create,
   importUsers,
   update,
