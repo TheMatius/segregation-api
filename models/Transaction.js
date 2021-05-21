@@ -10,7 +10,7 @@ transactionSchema.set(('toJSON'), {
   transform: (doc, transaction) => {
     // eslint-disable-next-line no-unused-vars
     const { _id: id, __v, ...args } = transaction;
-    return { id, ...args };
+    return (!id) ? { ...args } : { id, ...args };
   }
 });
 
