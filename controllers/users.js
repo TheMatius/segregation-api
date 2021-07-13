@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const Risk = require('../models/Risk');
 
+const { insertManyUsers, updateManyUsers } = require('../helpers/handleManyUsers');
+
 const getAll = async (req, res, next) => {
   try {
     const users = await User.find({}).populate('transactionList', { _id: 0 });
@@ -112,55 +114,20 @@ const importUsers = async (req, res, next) => {
       });
     }
     const userIds = users.map(user => user.dni);
-    // Obtener los usuarios existentes de la BD
+    // Obtener los usuarios que hagan match con el archivo de la BD
     const usersDB = await User.find({ dni: { $in: userIds } });
   
-    const oldUsers = [];
-    const newUsers = [];
-    let updatedUsers = [];
-    let createdUsers = [];
+    const usersToUpdate = [];
+    const usersToAdd = [];
     // Filtrar los usuarios a actualizar y a crear
     users.forEach(user => (usersDB.findIndex(u => u.dni === user.dni) > -1)
-      ? oldUsers.push(user)
-      : newUsers.push(user)
+      ? usersToUpdate.push(user)
+      : usersToAdd.push(user)
     );
     // Actualizando usuarios
-    if (oldUsers && oldUsers.length > 0) {
-      const users = oldUsers.map(async (user) => {
-        const idx = usersDB.findIndex(u => u.dni === user.dni);
-        const userDB = usersDB[idx];
-        const { transactions: transactionsDB } = userDB;
-        const { transactions: userTransactions } = user;
-        const newTransactions = userTransactions.filter(transaction => 
-          transactionsDB.findIndex(t => t === transaction) === -1
-        );
-        userDB.transactions = [...transactionsDB, ...newTransactions];
-        return await userDB.save();
-      });
-  
-      if (users) {
-        updatedUsers = await Promise.all(users);
-      }
-    }
+    const updatedUsers = await updateManyUsers(usersToUpdate, usersDB);
     // Creando nuevos usuarios
-    if (newUsers && newUsers.length > 0) {
-      const users = newUsers.map(async (user) => {
-        const { dni, username, name, lastname, transactions } = user;
-        const userDB = new User({
-          dni,
-          username,
-          name,
-          lastname,
-          transactions
-        });
-  
-        return await userDB.save();
-      });
-  
-      if (users){
-        createdUsers = await Promise.all(users);
-      }
-    }
+    const createdUsers = await insertManyUsers(usersToAdd);
   
     // Se envian los usuarios creados y actualizados al importar los datos.
     res.json({

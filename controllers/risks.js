@@ -1,4 +1,4 @@
-const Risk = require('../models/SegregationRisk');
+const Risk = require('../models/Risk');
 
 const getAll = async (req, res, next) => {
   try {
